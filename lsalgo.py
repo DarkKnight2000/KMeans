@@ -2,14 +2,12 @@ import random
 import numpy as np
 import scipy.io
 from sklearn.model_selection import train_test_split
+import pickle
 
 random.seed(0)
 
-mat = scipy.io.loadmat('./Datasets/cardio.mat')
-X_train, X_test, y_train, y_test = train_test_split(mat['X'], mat['y'], test_size=0.33, random_state=42)
-print(X_test.shape)
-
 eps = 0.0001
+load_data = True
 
 def sq_dist(u, v):
     if(len(u) != len(v)):
@@ -61,31 +59,26 @@ def outliers(S, C, U, k):
 # U is all points
 # C is the set of centers
 def LS(U, C, k):
-    U_ = Complement(U, C) # Always equal to U/C
 
     print('C shape-- ',len(C),',',len(C[0]))
-    print('C- shape-- ',len(U_),',',len(U_[0]))
     print('U shape-- ',len(U),',',len(U[0]))
-    print('cost of c, c_---', cost(C, U_, U))
     print('a--',cost_km(C, U))
-    print('b--',cost_km(C, U_))
     alpha = -1
     while alpha < 0 or (alpha*(1 - (eps/k)) > cost_km(C, U_)):
-        alpha = cost_km(C, U_)
+        alpha = cost_km(C, U)
         C_ = C # Copy for C
-        U_2 = U_ # Copy for U_
         changed = False
-        for i, u in enumerate(U_): # Searching all non-centers to replace one of the centers
+        for i, u in enumerate(U): # Searching all non-centers to replace one of the centers
             for j, v in enumerate(C):
-                if cost_km(C[:j] + C[j+1:] + [u], U_[:i] + U_[i+1:] + [v]) < cost_km(C_, U_2):
+                print('c- shape in iter ', len(C[:j] + C[j+1:] + [u]), ' for j ', j)
+                c1 = cost_km(C[:j] + C[j+1:] + [u], U)
+                if d(u, C) != 0 and c1 < cost_km(C_, U):
                     print('changed--')
                     print('C- shape-- ',len(C_),',',len(C_[0]))
                     changed = True
                     C_ = C[:j] + C[j+1:] + [u]
-                    U_2 = U_[:i] + U_[i+1:] + [v]
         if not changed: break
         C = C_
-        U_ = U_2
     return C
 
 
@@ -103,6 +96,8 @@ def LS_outlier(U, k, z):
     # print(U[1][0])
     # print(Z[0][0]-U[1][0])
     print('z shape',len(Z))
+    print('U shape ',len(U),',',len(U[0]))
+    print('comp shape ', len(Complement(U, Z)))
 
     alpha = -1
     while alpha < 0 or (alpha*(1 - (eps/k))):
@@ -135,6 +130,35 @@ def LS_outlier(U, k, z):
     return C, Z
 
 
+if load_data:
+    temp_X = pickle.load(open('./Datasets/train_X.pkl', 'rb'))
+    temp_Y = pickle.load(open('./Datasets/train_y.pkl', 'rb'))
+else:
+    mat = scipy.io.loadmat('./Datasets/cardio.mat')
+    U = mat['X']
+    temp_X = []
+    temp_Y = []
+    # removing duplicates
+    for i,a in enumerate(U):
+        f = False
+        for j,b in enumerate(U):
+            if i != j and sq_dist(a,b) == 0:
+                # print('error')
+                # print(a)
+                # print(b)
+                f = True
+        if not f:
+            temp_X.append(a)
+            temp_Y.append(mat['y'][i])
+    pickle.dump(temp_X, open('./Datasets/train_X.pkl', 'wb'))
+    pickle.dump(temp_Y, open('./Datasets/train_y.pkl', 'wb'))
+print(len(temp_X))
+
+
+X_train, X_test, y_train, y_test = train_test_split(np.array(temp_X), np.array(temp_Y), test_size=0.33, random_state=42)
+print(X_test.shape)
+
+
 U = X_train
 # print(s)
 # print(d(U[0], U))
@@ -146,5 +170,4 @@ print(U[1][0])
 print(U[2][0])
 # print(LS(U, [U[0]], 1)[0])
 # print(cost_km([U[1]], U))
-
 print(len(LS_outlier(U, 2, 1)[1]))
