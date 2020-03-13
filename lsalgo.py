@@ -3,6 +3,7 @@ import numpy as np
 import scipy.io
 from sklearn.model_selection import train_test_split
 import pickle
+import sys
 
 random.seed(0)
 
@@ -64,19 +65,23 @@ def LS(U, C, k):
     print('U shape-- ',len(U),',',len(U[0]))
     print('a--',cost_km(C, U))
     alpha = -1
-    while alpha < 0 or (alpha*(1 - (eps/k)) > cost_km(C, U_)):
+    while alpha < 0 or (alpha*(1 - (eps/k)) > cost_km(C, U)):
         alpha = cost_km(C, U)
         C_ = C # Copy for C
         changed = False
         for i, u in enumerate(U): # Searching all non-centers to replace one of the centers
             for j, v in enumerate(C):
-                print('c- shape in iter ', len(C[:j] + C[j+1:] + [u]), ' for j ', j)
-                c1 = cost_km(C[:j] + C[j+1:] + [u], U)
+                print('1 ', len(C[:j]))
+                print('2 ', len(C[j+1:]))
+                print('3 ', len([u]))
+                temp = [*C[:j],  *C[(j+1):], u]
+                print('c- shape in iter ', len(temp), ' for j ', j)
+                c1 = cost_km(temp, U)
                 if d(u, C) != 0 and c1 < cost_km(C_, U):
                     print('changed--')
                     print('C- shape-- ',len(C_),',',len(C_[0]))
                     changed = True
-                    C_ = C[:j] + C[j+1:] + [u]
+                    C_ = temp
         if not changed: break
         C = C_
     return C
@@ -92,6 +97,9 @@ def LS_outlier(U, k, z):
     print('cost of c, c_', cost(C, C_, U))
     
     Z = outliers(C, [], U, z)
+    if len(Z) != z:
+        print('error in z')
+        sys.exit(1)
     # print(Z[0])
     # print(U[1][0])
     # print(Z[0][0]-U[1][0])
@@ -106,7 +114,9 @@ def LS_outlier(U, k, z):
         # {(i) local search with no outliers}
         C = LS(Complement(U, Z), C, k)
         print('C shape ',len(C),',',len(C[0]))
-
+        if len(C) != k:
+            print('error in c')
+            sys.exit(1)
         C_ = C # Copy for C
         Z_ = Z # Copy for Z
 
@@ -127,6 +137,10 @@ def LS_outlier(U, k, z):
         if cost(C, Z, U)*(1 - (eps/k)) > cost(C_, Z_, U):
             C =C_
             Z = Z_
+
+        if len(Z) != z or len(C) != k:
+            print('error in z or c')
+            sys.exit(1)
     return C, Z
 
 
@@ -170,4 +184,4 @@ print(U[1][0])
 print(U[2][0])
 # print(LS(U, [U[0]], 1)[0])
 # print(cost_km([U[1]], U))
-print(len(LS_outlier(U, 2, 1)[1]))
+C, Z = (LS_outlier(U, 2, 10))
