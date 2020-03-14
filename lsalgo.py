@@ -7,7 +7,7 @@ import sys
 
 random.seed(0)
 
-eps = 0.0001
+eps = .5
 load_data = True
 
 def sq_dist(u, v):
@@ -121,9 +121,9 @@ def LS_outlier(U, k, z):
         Z_ = Z # Copy for Z
 
         # {(ii) cost of discarding z additional outliers}
-        # temp = outliers(C, Z, U, z)
-        # if cost(C, Z, U)*(1 - (eps/k)) > cost(C, Z + temp, U):
-        #     Z_ = Z + temp
+        temp = outliers(C, Z, U, z)
+        if cost(C, Z, U)*(1 - (eps/k)) > cost(C, Z + temp, U):
+            Z_ = Z + temp
 
         # {(iii) for each center and non-center, perform a swap and discard additional outliers}
         for u in U:
@@ -133,7 +133,7 @@ def LS_outlier(U, k, z):
                 if len(temp) != len(C):
                     print('error2')
                     sys.exit(1)
-                if cost(C[:i] + C[i+1:] + [u], Z + temp, U) < cost(C_, Z_, U):
+                if cost(C[:i] + C[i+1:] + [u], Z + outliers(temp, [], U, z), U) < cost(C_, Z_, U):
                     C_ = C[:i] + C[i+1:] + [u]
                     Z_ = Z + outliers(C[:i] + C[i+1:] + [u], [], U, z)
 
@@ -178,6 +178,7 @@ print(len(temp_X))
 
 
 U = temp_X[:100]
+U = [u[:2] for u in U]
 # print(temp_Y)
 # print(d(U[0], U))
 # cost_km(U, U)
@@ -188,7 +189,7 @@ print(U[1][0])
 print(U[2][0])
 # print(LS(U, [U[0]], 1)[0])
 # print(cost_km([U[1]], U))
-C, Z = (LS_outlier(U, 2, 10))
+C, Z = (LS_outlier(U, 4, 10))
 
 loss = 0
 for i, x in enumerate(temp_X):
