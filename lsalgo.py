@@ -71,17 +71,17 @@ def LS(U, C, k):
         changed = False
         for i, u in enumerate(U): # Searching all non-centers to replace one of the centers
             for j, v in enumerate(C):
-                print('1 ', len(C[:j]))
-                print('2 ', len(C[j+1:]))
-                print('3 ', len([u]))
+                # print('1 ', len(C[:j]))
+                # print('2 ', len(C[j+1:]))
+                # print('3 ', len([u]))
                 temp = [*C[:j],  *C[(j+1):], u]
-                print('c- shape in iter ', len(temp), ' for j ', j)
+                # print('c- shape in iter ', len(temp), ' for j ', j)
                 c1 = cost_km(temp, U)
                 if d(u, C) != 0 and c1 < cost_km(C_, U):
-                    print('changed--')
-                    print('C- shape-- ',len(C_),',',len(C_[0]))
-                    changed = True
+                    #print('changed--')
                     C_ = temp
+                    #print('C- shape-- ',len(C_),',',len(C_[0]))
+                    changed = True
         if not changed: break
         C = C_
     return C
@@ -108,12 +108,12 @@ def LS_outlier(U, k, z):
     print('comp shape ', len(Complement(U, Z)))
 
     alpha = -1
-    while alpha < 0 or (alpha*(1 - (eps/k))):
+    while alpha < 0 or (alpha*(1 - (eps/k))) > cost(C, Z, U):
         alpha = cost(C, Z, U)
-
+        print('alpha', alpha)
         # {(i) local search with no outliers}
         C = LS(Complement(U, Z), C, k)
-        print('C shape ',len(C),',',len(C[0]))
+        #print('C shape ',len(C),',',len(C[0]))
         if len(C) != k:
             print('error in c')
             sys.exit(1)
@@ -121,14 +121,18 @@ def LS_outlier(U, k, z):
         Z_ = Z # Copy for Z
 
         # {(ii) cost of discarding z additional outliers}
-        temp = outliers(C, Z, U, z)
-        if cost(C, Z, U)*(1 - (eps/k)) > cost(C, Z + temp, U):
-            Z_ = Z + temp
+        # temp = outliers(C, Z, U, z)
+        # if cost(C, Z, U)*(1 - (eps/k)) > cost(C, Z + temp, U):
+        #     Z_ = Z + temp
 
         # {(iii) for each center and non-center, perform a swap and discard additional outliers}
         for u in U:
             for i, v in enumerate(C):
-                temp = outliers(C[:i] + C[i+1:] + [u], [], U, z)
+                temp = C[:i] + C[i+1:] + [u]
+                #print('temp', len(temp))
+                if len(temp) != len(C):
+                    print('error2')
+                    sys.exit(1)
                 if cost(C[:i] + C[i+1:] + [u], Z + temp, U) < cost(C_, Z_, U):
                     C_ = C[:i] + C[i+1:] + [u]
                     Z_ = Z + outliers(C[:i] + C[i+1:] + [u], [], U, z)
@@ -138,8 +142,8 @@ def LS_outlier(U, k, z):
             C =C_
             Z = Z_
 
-        if len(Z) != z or len(C) != k:
-            print('error in z or c')
+        if len(C) != k:
+            print('error in c')
             sys.exit(1)
     return C, Z
 
@@ -169,12 +173,12 @@ else:
 print(len(temp_X))
 
 
-X_train, X_test, y_train, y_test = train_test_split(np.array(temp_X), np.array(temp_Y), test_size=0.33, random_state=42)
-print(X_test.shape)
+# X_train, X_test, y_train, y_test = train_test_split(np.array(temp_X), np.array(temp_Y), test_size=0.33, random_state=42)
+# print(X_test.shape)
 
 
-U = X_train
-# print(s)
+U = temp_X[:100]
+# print(temp_Y)
 # print(d(U[0], U))
 # cost_km(U, U)
 # LS_outlier(U, 1, 1)
@@ -185,3 +189,10 @@ print(U[2][0])
 # print(LS(U, [U[0]], 1)[0])
 # print(cost_km([U[1]], U))
 C, Z = (LS_outlier(U, 2, 10))
+
+loss = 0
+for i, x in enumerate(temp_X):
+    if (d(x, Z) == 0) and temp_Y[i][0] == 0:
+        loss += 1
+
+print('loss : ', loss)
