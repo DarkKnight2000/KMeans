@@ -42,8 +42,8 @@ def Complement(U, Z):
 '''
 Get sum of distances from S all points in U/C
 '''
-def cost(S, C, U):
-    return cost_km(S, Complement(U, C))
+def cost(C, U, Z):
+    return cost_km(C, Complement(U, Z))
 
 '''
 S -> farthest points from this set are calculated
@@ -57,9 +57,9 @@ def outliers(S, C, U, k):
 # C is the set of centers
 def LS(U, C, k, eps):
 
-    print('C shape-- ',len(C),',',len(C[0]))
-    print('U shape-- ',len(U),',',len(U[0]))
-    print('a--',cost_km(C, U))
+    # print('C shape-- ',len(C),',',len(C[0]))
+    # print('U shape-- ',len(U),',',len(U[0]))
+    # print('a--',cost_km(C, U))
     alpha = -1
     while alpha < 0 or (alpha*(1 - (eps/k)) > cost_km(C, U)):
         alpha = cost_km(C, U)
@@ -86,12 +86,12 @@ def LS(U, C, k, eps):
 
 def LS_outlier(U, k, z, eps = 4):
     random.shuffle(U)
-    print('u shape ', len(U),',',len(U[0]))
+    # print('u shape ', len(U),',',len(U[0]))
     C = U[:k]
     C_ = U[k:]
-    print('C shape ',len(C),',',len(C[0]))
-    print('C- shape ',len(C_),',',len(C_[0]))
-    print('cost of c, c_', cost(C, C_, U))
+    # print('C shape ',len(C),',',len(C[0]))
+    # print('C- shape ',len(C_),',',len(C_[0]))
+    # print('cost of c, c_', cost(C, C_, U))
     
     Z = outliers(C, [], U, z)
     if len(Z) != z:
@@ -100,16 +100,16 @@ def LS_outlier(U, k, z, eps = 4):
     # print(Z[0])
     # print(U[1][0])
     # print(Z[0][0]-U[1][0])
-    print('z shape',len(Z))
-    print('U shape ',len(U),',',len(U[0]))
-    print('comp shape ', len(Complement(U, Z)))
+    # print('z shape',len(Z))
+    # print('U shape ',len(U),',',len(U[0]))
+    # print('comp shape ', len(Complement(U, Z)))
 
     alpha = -1
     while (alpha < 0 or (alpha*(1 - (eps/k))) > cost(C, Z, U)) and len(Z)+k+z < len(U) :#FIXME: remove last condition
         alpha = cost(C, Z, U)
-        print('alpha', alpha)
+        # print('alpha', alpha)
         # {(i) local search with no outliers}
-        print('U Z comp shape ',len(Complement(U, Z)),',',len(Complement(U, Z)[0]))
+        # print('U Z comp shape ',len(Complement(U, Z)),',',len(Complement(U, Z)[0]))
         C = LS(Complement(U, Z), C, k, eps)
         #print('C shape ',len(C),',',len(C[0]))
         if len(C) != k:
@@ -135,21 +135,21 @@ def LS_outlier(U, k, z, eps = 4):
                 if cost(temp, Z + outliers(temp, Z, U, z), U) < cost(C_, Z_, U):
                     C_ = C[:i] + C[i+1:] + [u]
                     Z_ = Z + outliers(temp, Z, U, z)
-                    print('changed c_ ', len(C_),',',len(C_[0]),', ___ ',len(Z_),',',len(Z_[0]))
-                    print('U shape ',len(U),',',len(U[0]))
+                    # print('changed c_ ', len(C_),',',len(C_[0]),', ___ ',len(Z_),',',len(Z_[0]))
+                    # print('U shape ',len(U),',',len(U[0]))
 
 
         # {update the solution allowing additional outliers if the solution value improved significantly}
         if cost(C, Z, U)*(1 - (eps/k)) > cost(C_, Z_, U):
             C =C_
             Z = Z_
-        print('looped')
+        # print('looped')
 
-        print('u shape ', len(U),',',len(U[0]))
-        print('C shape ',len(C),',',len(C[0]))
-        print('Z shape ',len(Z),',',len(Z[0]))
-        print('U Z comp shape ',len(Complement(U, Z)),',',len(Complement(U, Z)[0]))
-        print('pres cost ', cost(C, Z, U))
+        # print('u shape ', len(U),',',len(U[0]))
+        # print('C shape ',len(C),',',len(C[0]))
+        # print('Z shape ',len(Z),',',len(Z[0]))
+        # print('U Z comp shape ',len(Complement(U, Z)),',',len(Complement(U, Z)[0]))
+        # print('pres cost ', cost(C, Z, U))
 
         if len(C) != k:
             print('error in c')
