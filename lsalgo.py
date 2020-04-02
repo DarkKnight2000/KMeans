@@ -21,17 +21,18 @@ def d(v, S, key = "min"):
     return di
 
 '''
-Distances from S to all points in C
+Distances from each point in C to the nearest point in S
 '''
-def cost_km(S, C, k = None, min = False):
+def cost_km(S, C, k = None, key = "min"):
 # min = true then get least distance points o.w max distance
     dists = list(map(lambda x: d(x, S), C))
     #print('x ', dists)
     if k is None : return np.sum(dists) # return sum of distances of points in C from S
     else:
         # return k farthest points from S in C
-        x = sorted(zip(dists, C), key= lambda x : x[0], reverse = (not min))[:k]
-        x = [a[1] for a in x]
+        x = sorted(zip(dists, C), key= lambda x : x[0])
+        if key != "min": x = list(reversed(x))
+        x = [a[1] for a in x[:k]]
         return x
 
 # Complement of Z with respect to U
@@ -51,7 +52,7 @@ U/C -> Points from this set are searched for the farthest points
 k -> no. of farthest points required
 '''
 def outliers(S, C, U, k):
-    return cost_km(S, Complement(U, C), k)
+    return cost_km(S, Complement(U, C), k = k, key = "max")
 
 # U is all points
 # C is the set of centers
@@ -60,11 +61,10 @@ def LS(U, C, k, eps):
     # print('C shape-- ',len(C),',',len(C[0]))
     # print('U shape-- ',len(U),',',len(U[0]))
     # print('a--',cost_km(C, U))
-    alpha = -1
-    while alpha < 0 or (alpha*(1 - (eps/k)) > cost_km(C, U)):
+    alpha = np.inf
+    while (alpha*(1 - (eps/k)) > cost_km(C, U)):
         alpha = cost_km(C, U)
         C_ = C # Copy for C
-        changed = False
         for i, u in enumerate(U): # Searching all non-centers to replace one of the centers
             for j, v in enumerate(C):
                 if d(u, C) == 0: continue
@@ -78,20 +78,18 @@ def LS(U, C, k, eps):
                     #print('changed--')
                     C_ = temp
                     #print('C- shape-- ',len(C_),',',len(C_[0]))
-                    changed = True
-        if not changed: break
         C = C_
     return C
 
 
-def LS_outlier(U, k, z, eps = 4):
-    random.shuffle(U)
-    # print('u shape ', len(U),',',len(U[0]))
-    C = U[:k]
-    C_ = U[k:]
+def LS_outlier(U, k, z, eps = .00001):
+
+    U_ = U.copy()
+    random.shuffle(U_)
+    C = U_[:k]
     # print('C shape ',len(C),',',len(C[0]))
     # print('C- shape ',len(C_),',',len(C_[0]))
-    # print('cost of c, c_', cost(C, C_, U))
+    # print('cost of c, c_', cost(C, U, C_))
     
     Z = outliers(C, [], U, z)
     if len(Z) != z:
@@ -104,10 +102,13 @@ def LS_outlier(U, k, z, eps = 4):
     # print('U shape ',len(U),',',len(U[0]))
     # print('comp shape ', len(Complement(U, Z)))
 
-    alpha = -1
-    while (alpha < 0 or (alpha*(1 - (eps/k))) > cost(C, Z, U)) and len(Z)+k+z < len(U) :#FIXME: remove last condition
-        alpha = cost(C, Z, U)
-        # print('alpha', alpha)
+    alpha = np.inf
+    while ((alpha*(1 - (eps/k))) > cost(C, U, Z)):#FIXME: remove last condition
+        alpha = cost(C, U, Z)
+        print('C', len(C))
+        print('comp', len(Complement(U, Z)))
+        print('cost---',)
+        print('alpha', alpha)
         # {(i) local search with no outliers}
         # print('U Z comp shape ',len(Complement(U, Z)),',',len(Complement(U, Z)[0]))
         C = LS(Complement(U, Z), C, k, eps)
@@ -120,7 +121,7 @@ def LS_outlier(U, k, z, eps = 4):
 
         # {(ii) cost of discarding z additional outliers}
         temp = outliers(C, Z, U, z)
-        if cost(C, Z, U)*(1 - (eps/k)) > cost(C, Z + temp, U):
+        if cost(C, U, Z)*(1 - (eps/k)) > cost(C, U, Z + temp):
             Z_ = Z + temp
 
         # {(iii) for each center and non-center, perform a swap and discard additional outliers}
@@ -132,7 +133,7 @@ def LS_outlier(U, k, z, eps = 4):
                 if len(temp) != len(C):
                     print('error2')
                     sys.exit(1)
-                if cost(temp, Z + outliers(temp, Z, U, z), U) < cost(C_, Z_, U):
+                if cost(temp, U, Z + outliers(temp, Z, U, z)) < cost(C_, U, Z_):
                     C_ = C[:i] + C[i+1:] + [u]
                     Z_ = Z + outliers(temp, Z, U, z)
                     # print('changed c_ ', len(C_),',',len(C_[0]),', ___ ',len(Z_),',',len(Z_[0]))
@@ -140,16 +141,16 @@ def LS_outlier(U, k, z, eps = 4):
 
 
         # {update the solution allowing additional outliers if the solution value improved significantly}
-        if cost(C, Z, U)*(1 - (eps/k)) > cost(C_, Z_, U):
+        if cost(C, U, Z)*(1 - (eps/k)) > cost(C_, U, Z_):
             C =C_
             Z = Z_
-        # print('looped')
+        print(cost(C, U, Z), cost(C_, U, Z_))
 
         # print('u shape ', len(U),',',len(U[0]))
         # print('C shape ',len(C),',',len(C[0]))
         # print('Z shape ',len(Z),',',len(Z[0]))
         # print('U Z comp shape ',len(Complement(U, Z)),',',len(Complement(U, Z)[0]))
-        # print('pres cost ', cost(C, Z, U))
+        # print('pres cost ', cost(C, U, Z))
 
         if len(C) != k:
             print('error in c')

@@ -27,15 +27,15 @@ def dis(A, B, e,i) :
     C = A - B
     C = np.square(C)
     C = np.sum(C)
-    print("Error at Iteration " + str(i) + " : ", C,"\n")
+    # print("Error at Iteration " + str(i) + " : ", C,"\n")
     if (C > e) :
         return 1
     return 0
 
 
-def k_means(X) :
+def k_means(X, C) :
     curr_clusters = X[:,:K]
-    prev_clusters = np.zeros((d,K))
+    prev_clusters = C
     Iteration = 0
     while (dis(curr_clusters,prev_clusters,E,Iteration)) :
         Clusters.clear()

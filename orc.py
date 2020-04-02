@@ -2,17 +2,22 @@ from scipy.cluster import vq
 from lsalgo import d, sq_dist
 import numpy as np
 
+'''
+Return cluster ids, distances, max distance
+'''
 def getClusters(U, C):
     ids = []
     dists = []
     d_max = np.inf
-    for x in U:
+    clusters = [[] for _ in range(len(C))]
+    for i, x in enumerate(U):
         cds = list(map(lambda c : sq_dist(x, c), C))
         ids.append(np.argmin(cds)) # gives index of nearest cluster center
         dists.append(cds[ids[-1]]) # get distance at that index, to return distances to nearest centers
         if d_max == np.inf or d_max < dists[-1]:
             d_max = dists[-1]
-    return ids, np.array(dists), d_max
+        clusters[ids[-1]].append(i) # add into cluster
+    return ids, np.array(dists), d_max, clusters
 
 '''
     U -> Set of points to cluster
@@ -34,7 +39,7 @@ def orc(U, k, I, T, iniIters = 3):
             dist = dist_
 
     for _ in range(I):
-        cIds, cDists, d_max = getClusters(U, C)
+        cIds, cDists, d_max, _ = getClusters(U, C)
         o_i = cDists/d_max
         U_ = []
         for i in range(len(U)):

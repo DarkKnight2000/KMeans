@@ -2,7 +2,7 @@ import pickle
 import random
 import scipy.io
 import numpy as np
-from lsalgo import sq_dist, Complement
+from lsalgo import sq_dist, Complement, LS_outlier
 from orc import getClusters
 import matplotlib.pyplot as plt
 import time
@@ -45,7 +45,7 @@ def load_file(load_data):
     return temp_X, temp_Y
 
 def make_data(num_outliers, clus_sep, clus_var, cube_side, num_clus = 3, num_points = 30):
-    C = [[random.uniform(0, cube_side), random.uniform(0, cube_side)], [random.uniform(0, -cube_side), random.uniform(0, cube_side)], [random.uniform(0, cube_side), random.uniform(0, -cube_side)]]
+    C = [[random.uniform(clus_sep, cube_side), random.uniform(clus_sep, cube_side)], [random.uniform(clus_sep, -cube_side), random.uniform(clus_sep, cube_side)], [random.uniform(clus_sep, cube_side), random.uniform(clus_sep, -cube_side)]]
     U = []
     for i in range(num_clus):
         if len(U) != 0 : U = np.vstack((U, np.array([np.random.normal(C[i][0], clus_var, num_points), np.random.normal(C[i][1], clus_var, num_points)]).T))
@@ -53,10 +53,10 @@ def make_data(num_outliers, clus_sep, clus_var, cube_side, num_clus = 3, num_poi
         # U.append(np.array([np.random.normal(C[i][0], clus_var, num_points), np.random.normal(C[i][1], clus_var, num_points)]).T)
         print(np.array(U).shape)
     U = np.vstack((U, [[random.uniform(-2*cube_side, 2*cube_side), random.uniform(-2*cube_side, 2*cube_side)] for _ in range(num_outliers)]))
-    print(U[0])
-    # print(np.array(U).shape)
-    print(U[:-num_outliers].T[0])
-    ids, dists, _ = getClusters(U, C)
+    # print(U[0])
+    print(np.array(U).shape)
+    # print(U[:-num_outliers].T[0])
+    ids, dists, _, _ = getClusters(U, C)
     print(ids[0])
     print(dists[0])
     dists = sorted([(i,x) for i,x in enumerate(dists)], key = lambda x : x[1])
@@ -67,21 +67,19 @@ def make_data(num_outliers, clus_sep, clus_var, cube_side, num_clus = 3, num_poi
         Z.append(U[x[0]])
     Z = np.array(Z)
 
-    plt.scatter(U.T[0], U.T[1], c='b')
-    plt.scatter(Z.T[0], Z.T[1], c='r')
-    plt.savefig("./Plots/SynthData/A1.png")
-    plt.show()
+    # plotGraph(U, C, Z, "./Plots/SynthData")
 
     # print(dists)
     return U, y, C, Z, ids
 
-def plotGraph(U, C, Z, filename):
-    plt.plot(np.array(Complement(U, C+Z)).T[0], np.array(Complement(U, C+Z)).T[1], 'bo')
+def plotGraph(U, C, Z, foldername, filename = "trail11.png"):
+    plt.plot(np.array(U).T[0], np.array(U).T[1], 'bo')
     plt.plot(np.array(C).T[0], np.array(C).T[1], 'ro')
-    plt.plot(np.array(Z).T[0], np.array(Z).T[1], 'go')
-    plt.savefig(f"{filename}/trail{time.time()}.png")
+    if Z is not None: plt.plot(np.array(Z).T[0], np.array(Z).T[1], 'go')
+    plt.savefig(f"{foldername}/{filename}")
     plt.show()
 
 
 if __name__ == "__main__":
-    make_data(5, 10, 10, 100)
+    U,_,C,Z,_ = make_data(5, 0, 10, 100)
+    plotGraph(U, C, Z, "./Plots/SynthData", "A1.png")
