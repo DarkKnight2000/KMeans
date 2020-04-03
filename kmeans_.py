@@ -25,7 +25,7 @@ def kmeans_(U, k, z, eps = 0.0001):
         C = np.zeros((k, len(U[0])))
         for i in X:
             cNum[cIds[i]] += 1 # update no of points in cluster
-            C[cIds[i]] = C[cIds[i]] + U[cIds[i]]
+            C[cIds[i]] = C[cIds[i]] + U[i]
         for j in range(k):
             if cNum[j] != 0 : C[j] = C[j]/cNum[j]
             else : print('empty')
