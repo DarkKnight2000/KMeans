@@ -2,10 +2,14 @@ from scipy.cluster import vq
 from lsalgo import d, sq_dist
 import numpy as np
 
-'''
-Return cluster ids, distances, max distance
-'''
+
 def getClusters(U, C):
+    '''
+        U : Total Data
+        C : Cluster Centers
+        Returns : cluster ids, distances, max distance
+    '''
+
     ids = []
     dists = []
     d_max = np.inf
@@ -19,13 +23,15 @@ def getClusters(U, C):
         clusters[ids[-1]].append(i) # add into cluster
     return ids, np.array(dists), d_max, clusters
 
-'''
-    U -> Set of points to cluster
-    I -> no of iterations to run
-    T -> Threshold to classify as outlier
-    return Centers, Outliers
-'''
+
 def orc(U, k, I, T, iniIters = 3):
+    '''
+        U : Set of points to cluster
+        I : no of iterations to run
+        T : Threshold to classify as outlier
+        returns Centers, Outliers
+    '''
+
     # Running kmeans multiple times to initialise C
     C = None
     Z = [] # outliers
